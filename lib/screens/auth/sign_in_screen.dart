@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -25,11 +26,53 @@ class _SignInScreenState extends State<SignInScreen> {
   TextEditingController passwordController = TextEditingController();
   GlobalKey<FormState> signInFormKey = GlobalKey<FormState>();
 
+  @override
+  void initState() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      context.read<SignInProvider>().resetScreenState();
+    });
+    super.initState();
+  }
+
   void signIn() {
     if (!signInFormKey.currentState!.validate()) {
       return;
     } else {
-      debugPrint('Validated form');
+      doSignIn(emailController.text, passwordController.text);
+    }
+  }
+
+  Future<void> doSignIn(String email, password) async {
+    try {
+      // close keyboard
+      FocusManager.instance.primaryFocus?.unfocus();
+      // sign in with email and password
+      await context
+          .read<SignInProvider>()
+          .signInWithEmailAndPassword(email, password)
+          .then(
+        (value) {
+          if (value == '200') {
+            Navigator.pushReplacementNamed(context, '/bottom_nav');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: kBlackColor,
+                content: Text(
+                  value,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: kRedColor,
+                  ),
+                ),
+              ),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -50,7 +93,7 @@ class _SignInScreenState extends State<SignInScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _ImageTodoList(),
+            const ImageTodoList(),
             Expanded(
               child: Align(
                 alignment:
@@ -129,12 +172,22 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           ),
                         ),
-                        CustomButton(
-                          title: 'SIGN IN',
-                          onPressed: () {
-                            signIn();
-                          },
-                        ),
+                        Consumer<SignInProvider>(
+                            builder: (context, provider, child) {
+                          final isLoading = provider.isLoading;
+                          return isLoading
+                              ? Center(
+                                  child: CircularProgressIndicator(
+                                    color: kOrangeColor,
+                                  ),
+                                )
+                              : CustomButton(
+                                  title: 'SIGN IN',
+                                  onPressed: () {
+                                    signIn();
+                                  },
+                                );
+                        }),
                         CustomButton(
                           title: 'SIGN IN WITH GOOGLE',
                           onPressed: () {},
@@ -161,28 +214,6 @@ class _SignInScreenState extends State<SignInScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ImageTodoList extends StatelessWidget {
-  const _ImageTodoList({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        top: defaultPadding,
-      ),
-      child: Align(
-        alignment: Alignment.center,
-        child: SvgPicture.asset(
-          'assets/images/logo.svg',
-          width: Responsive.isMobile(context) ? 180 : 180 * 1.5,
-          height: Responsive.isMobile(context) ? 160 : 160 * 1.5,
-          fit: BoxFit.cover,
         ),
       ),
     );

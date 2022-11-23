@@ -8,11 +8,15 @@ import '../../../utils/helper.dart';
 class CustomButton extends StatelessWidget {
   final String title;
   final Function onPressed;
+  final Color backgroundColor;
+  final Color textColor;
 
   const CustomButton({
     Key? key,
     required this.title,
     required this.onPressed,
+    this.backgroundColor = kOrangeColor,
+    this.textColor = Colors.white,
   }) : super(key: key);
 
   @override
@@ -23,7 +27,7 @@ class CustomButton extends StatelessWidget {
       height: 48,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          primary: kOrangeColor,
+          backgroundColor: backgroundColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -37,6 +41,7 @@ class CustomButton extends StatelessWidget {
             fontWeight: FontWeight.w500,
             fontSize: Responsive.isMobile(context) ? 14 : 14 * 1.3,
             letterSpacing: 0.5,
+            color: textColor,
           ),
         ),
       ),

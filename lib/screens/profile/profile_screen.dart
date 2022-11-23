@@ -1,13 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:todos/providers/bottom_navigation_provider.dart';
+import 'package:todos/providers/profile_provider.dart';
 import 'package:todos/utils/helper.dart';
 
 import '../../utils/colors.dart';
 import '../auth/widgets/custom_button.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileProvider>().fetchUserProfile();
+    });
+    super.initState();
+  }
+
+  Future<void> logOut() async {
+    try {
+      context.read<ProfileProvider>().logOut().then((_) {
+        context.read<BottomNavigationProvider>().onChangeScreen(0);
+        Navigator.pushReplacementNamed(context, '/sign_in');
+      },);
+    }
+    catch (e) {
+      rethrow;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +54,9 @@ class ProfileScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushNamed(context, '/setting');
+            },
             icon: Icon(
               Icons.settings_outlined,
               color: kBlackColor,
@@ -66,13 +97,25 @@ class ProfileScreen extends StatelessWidget {
                             color: kBlackColor.withOpacity(0.5),
                           ),
                         ),
-                        Text(
-                          'Devin L.Waller',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: kOrangeColor,
-                          ),
+                        const SizedBox(width: 16,),
+                        Consumer<ProfileProvider>(
+                          builder: (context, provider, child) {
+                            return Expanded(
+                              child: Text(
+                                provider.userProfile != null
+                                    ? provider.userProfile!.fullName
+                                    : 'Loading full name',
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: kOrangeColor,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -93,13 +136,25 @@ class ProfileScreen extends StatelessWidget {
                             color: kBlackColor.withOpacity(0.5),
                           ),
                         ),
-                        Text(
-                          'devinwaller17@gmail.com',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            color: kOrangeColor,
-                          ),
+                        const SizedBox(width: 16,),
+                        Consumer<ProfileProvider>(
+                          builder: (context, provider, child) {
+                            return Expanded(
+                              child: Text(
+                                provider.userProfile != null
+                                    ? provider.userProfile!.email
+                                    : 'Loading email',
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: kOrangeColor,
+                                ),
+                                maxLines: 1,
+                                textAlign: TextAlign.end,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -120,12 +175,17 @@ class ProfileScreen extends StatelessWidget {
                             color: kBlackColor.withOpacity(0.5),
                           ),
                         ),
-                        Text(
-                          'Change password',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            color: kOrangeColor,
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(context, '/change_password');
+                          },
+                          child: Text(
+                            'Change password',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: kOrangeColor,
+                            ),
                           ),
                         ),
                       ],
@@ -135,7 +195,9 @@ class ProfileScreen extends StatelessWidget {
                     height: 30,
                   ),
                   CustomButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      logOut();
+                    },
                     title: 'LOG OUT',
                   ),
                 ],

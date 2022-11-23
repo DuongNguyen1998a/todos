@@ -1,89 +1,79 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:todos/providers/bottom_navigation_provider.dart';
 
-import '../../providers/sign_up_provider.dart';
+import '../../providers/change_password_provider.dart';
 import '../../responsive.dart';
 import '../../utils/colors.dart';
 import '../../utils/helper.dart';
 import '../widgets.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({Key? key}) : super(key: key);
+class ChangePasswordScreen extends StatefulWidget {
+  const ChangePasswordScreen({Key? key}) : super(key: key);
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
-  TextEditingController emailController = TextEditingController();
-  TextEditingController fullNameController = TextEditingController();
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
-  GlobalKey<FormState> signUpFormKey = GlobalKey<FormState>();
+  GlobalKey<FormState> changePasswordFormKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
-    emailController.dispose();
-    fullNameController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void signUp() {
-    if (!signUpFormKey.currentState!.validate()) {
+  void changePassword() {
+    if (!changePasswordFormKey.currentState!.validate()) {
       return;
     } else if (passwordController.text != confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          backgroundColor: kBlackColor,
           content: Text(
-            'Confirm password must be exactly password field.',
+            'Confirm Password mus be exactly password field.',
             style: GoogleFonts.montserrat(
               fontSize: 12,
               fontWeight: FontWeight.w400,
-              color: Colors.redAccent,
+              color: kRedColor,
             ),
-          ),
-          action: SnackBarAction(
-            label: 'OK',
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
           ),
         ),
       );
     } else {
-      doSignUp(emailController.text, passwordController.text,
-          fullNameController.text);
+      doChangePassword(passwordController.text);
     }
   }
 
-  Future<void> doSignUp(String email, password, fullName) async {
+  Future<void> doChangePassword(String password) async {
     try {
-      // close keyboard
-      FocusManager.instance.primaryFocus?.unfocus();
-      // create user with email and password
       await context
-          .read<SignUpProvider>()
-          .signUpWithEmailAndPassword(email, password, fullName)
+          .read<ChangePasswordProvider>()
+          .changePassword(password)
           .then(
         (value) {
           if (value == '200') {
+            context.read<ChangePasswordProvider>().resetScreenState();
+            context.read<BottomNavigationProvider>().onChangeScreen(0);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 backgroundColor: kBlackColor,
                 content: Text(
-                  'Sign up successfully. please check your email to active account.',
+                  'Change password success, please sign in again with new password.',
                   style: GoogleFonts.montserrat(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: Colors.green,
+                    color: kOrangeColor,
                   ),
                 ),
               ),
             );
-            Navigator.pushNamed(context, '/sign_in');
+            Navigator.pushReplacementNamed(context, '/sign_in');
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -109,6 +99,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0.0,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: kBlackColor,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -122,28 +125,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: SizedBox(
                   width: !Responsive.isMobile(context) ? 600 : double.infinity,
                   child: Form(
-                    key: signUpFormKey,
+                    key: changePasswordFormKey,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     child: ListView(
                       physics: BouncingScrollPhysics(),
                       shrinkWrap: true,
                       children: [
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(defaultPadding,
-                              defaultPadding * 1.5, defaultPadding, 16),
-                          child: CustomTextField(
-                            hintText: 'Email',
-                            textController: emailController,
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(
-                              defaultPadding, 0, defaultPadding, 16),
-                          child: CustomTextField(
-                            hintText: 'Full Name',
-                            textController: fullNameController,
-                          ),
-                        ),
                         Padding(
                           padding: EdgeInsets.fromLTRB(
                               defaultPadding, 0, defaultPadding, 15),
@@ -153,7 +140,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     primary: kOrangeColor,
                                   ),
                             ),
-                            child: Consumer<SignUpProvider>(
+                            child: Consumer<ChangePasswordProvider>(
                                 builder: (context, provider, child) {
                               final hidePassword = provider.hidePassword;
                               return CustomTextField(
@@ -183,7 +170,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     primary: kOrangeColor,
                                   ),
                             ),
-                            child: Consumer<SignUpProvider>(
+                            child: Consumer<ChangePasswordProvider>(
                                 builder: (context, provider, child) {
                               final hideConfirmPassword =
                                   provider.hideConfirmPassword;
@@ -206,7 +193,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             }),
                           ),
                         ),
-                        Consumer<SignUpProvider>(
+                        Consumer<ChangePasswordProvider>(
                           builder: (context, provider, child) {
                             final isLoading = provider.isLoading;
                             return isLoading
@@ -216,24 +203,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     ),
                                   )
                                 : CustomButton(
-                                    title: 'SIGN UP',
+                                    title: 'CHANGE PASSWORD',
                                     onPressed: () {
-                                      signUp();
+                                      changePassword();
                                     },
                                   );
                           },
-                        ),
-                        Align(
-                          alignment: Alignment.center,
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/sign_in');
-                            },
-                            child: const CustomTextSpan(
-                              text1: 'Have an account? ',
-                              text2: 'Log in',
-                            ),
-                          ),
                         ),
                         SizedBox(
                           height: defaultPadding,
